@@ -4,6 +4,7 @@ import ChangePassword from "./components/ChangePassword";
 import TeamTable from "./components/TeamTable";
 import TransferImport from "./components/TransferImport";
 import ExportButtons from "./components/ExportButtons";
+import HistoryViewer from "./components/HistoryViewer";
 import {
   login as apiLogin,
   changePassword,
@@ -14,7 +15,8 @@ import {
   updateTeam,
   swapTeams,
   processTransfers,
-  updateLevels
+  updateLevels,
+  fetchHistory
 } from "./services/api";
 
 export default function App() {
@@ -121,6 +123,7 @@ export default function App() {
       />
       <TransferImport onSubmit={handleTransfers} />
       <ExportButtons token={token} />
+      <HistoryViewer fetchHistory={fetchHistory} />
     </div>
   );
 }

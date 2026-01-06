@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import TeamTable from "./components/TeamTable";
-import { fetchTeams, fetchLevels } from "./services/api";
+import HistoryViewer from "./components/HistoryViewer";
+import { fetchTeams, fetchLevels, fetchHistory } from "./services/api";
 import { deepCompareTeams } from "./services/dataComparator";
 
 const BASE_INTERVAL = 600000; // 10 minutes
@@ -65,6 +66,7 @@ export default function App() {
         )}
       </header>
       <TeamTable teams={teams} levelNames={levels} />
+      <HistoryViewer fetchHistory={fetchHistory} />
     </div>
   );
 }

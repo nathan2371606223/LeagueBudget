@@ -12,3 +12,8 @@ export async function fetchLevels() {
   return res.data;
 }
 
+export async function fetchHistory(page = 1, pageSize = 10) {
+  const res = await axios.get(`${API_BASE}/history`, { params: { page, pageSize } });
+  return res.data;
+}
+

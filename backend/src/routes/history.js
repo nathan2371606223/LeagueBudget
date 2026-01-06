@@ -19,7 +19,7 @@ function toText(val) {
 }
 
 router.get("/", async (req, res) => {
-  const { team_id, field_name, start, end } = req.query;
+  const { team_id, field_name, start, end, page = 1, pageSize = 10 } = req.query;
   const conditions = [];
   const values = [];
   if (team_id) {
@@ -39,21 +39,38 @@ router.get("/", async (req, res) => {
     conditions.push(`h.timestamp <= $${values.length}`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const { rows } = await pool.query(
-    `
-    SELECT h.id, h.team_id, t.team_name, h.field_name, h.old_value, h.new_value, h.transfer_player, h.timestamp
+  const offset = (Number(page) - 1) * Number(pageSize);
+
+  const baseQuery = `
     FROM modification_history h
     LEFT JOIN teams t ON h.team_id = t.id
     ${where}
+  `;
+
+  const { rows: rowsData } = await pool.query(
+    `
+    SELECT h.id, h.team_id, t.team_name, h.field_name, h.old_value, h.new_value, h.transfer_player, h.timestamp
+    ${baseQuery}
     ORDER BY h.timestamp DESC
+    LIMIT $${values.length + 1} OFFSET $${values.length + 2}
     `,
-    values
+    [...values, Number(pageSize), offset]
   );
-  const mapped = rows.map((r) => ({
+
+  const { rows: countRows } = await pool.query(`SELECT COUNT(*)::int AS total ${baseQuery}`, values);
+  const total = countRows[0].total;
+
+  const mapped = rowsData.map((r) => ({
     ...r,
     change_value: computeChange(r.old_value, r.new_value)
   }));
-  res.json(mapped);
+
+  res.json({
+    data: mapped,
+    total,
+    page: Number(page),
+    pageSize: Number(pageSize)
+  });
 });
 
 router.get("/export", async (req, res) => {
