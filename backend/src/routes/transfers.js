@@ -9,8 +9,12 @@ const router = express.Router();
 function parsePrice(raw) {
   if (raw === null || raw === undefined) return NaN;
   if (typeof raw === "number") return raw;
-  const cleaned = String(raw).trim().replace(/[,，\s]/g, "").replace(/[￥¥$]/g, "");
-  return Number.parseFloat(cleaned);
+  const cleaned = String(raw)
+    .trim()
+    // keep digits, dot, minus
+    .replace(/[^\d.-]/g, "");
+  if (!cleaned || cleaned === "-" || cleaned === "." || cleaned === "-.") return NaN;
+  return Number(cleaned);
 }
 
 router.post("/process", authMiddleware, async (req, res) => {
