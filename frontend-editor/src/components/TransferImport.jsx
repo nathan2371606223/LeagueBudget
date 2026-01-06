@@ -56,14 +56,14 @@ export default function TransferImport({ onSubmit }) {
           {entries.map((row, idx) => (
             <div key={idx} style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 8 }}>
               <input
-                placeholder="转入球队"
-                value={row.teamIn}
-                onChange={(e) => updateEntry(idx, "teamIn", e.target.value)}
-              />
-              <input
                 placeholder="转出球队"
                 value={row.teamOut}
                 onChange={(e) => updateEntry(idx, "teamOut", e.target.value)}
+              />
+              <input
+                placeholder="转入球队"
+                value={row.teamIn}
+                onChange={(e) => updateEntry(idx, "teamIn", e.target.value)}
               />
               <input placeholder="价格" value={row.price} onChange={(e) => updateEntry(idx, "price", e.target.value)} />
               <input
@@ -80,7 +80,7 @@ export default function TransferImport({ onSubmit }) {
           <textarea
             rows={6}
             style={{ width: "100%" }}
-            placeholder="格式: 转入球队,转出球队,价格,球员 （分隔符支持：制表符、逗号、中文逗号）"
+            placeholder="格式: 转出球队,转入球队,价格,球员 （分隔符支持：制表符、逗号、中文逗号）"
             value={batchText}
             onChange={(e) => setBatchText(e.target.value)}
             onKeyDown={(e) => {
