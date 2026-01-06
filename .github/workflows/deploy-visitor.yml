@@ -22,6 +22,9 @@ jobs:
           cache-dependency-path: frontend-visitor/package-lock.json
       - run: npm install
       - run: npm run build
+        env:
+          VITE_API_BASE: https://leaguebudget-production.up.railway.app/api
+          VITE_BASE_PATH: /LeagueBudget/visitor/
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
