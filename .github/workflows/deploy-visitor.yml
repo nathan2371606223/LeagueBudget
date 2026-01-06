@@ -1,4 +1,4 @@
-﻿name: Deploy Editor to GH Pages
+﻿name: Deploy Visitor to GH Pages
 
 on:
   push:
@@ -10,20 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend-editor
+        working-directory: frontend-visitor
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
-          cache-dependency-path: frontend-editor/package-lock.json
+          cache-dependency-path: frontend-visitor/package-lock.json
       - run: npm install
       - run: npm run build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: frontend-editor/dist
+          publish_dir: frontend-visitor/dist
           publish_branch: gh-pages
           force_orphan: true
