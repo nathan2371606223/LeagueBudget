@@ -24,39 +24,62 @@ router.get("/", async (req, res) => {
   const values = [];
   if (team_id) {
     values.push(team_id);
-    conditions.push(`team_id = $${values.length}`);
+    conditions.push(`h.team_id = $${values.length}`);
   }
   if (field_name) {
     values.push(field_name);
-    conditions.push(`field_name = $${values.length}`);
+    conditions.push(`h.field_name = $${values.length}`);
   }
   if (start) {
     values.push(start);
-    conditions.push(`timestamp >= $${values.length}`);
+    conditions.push(`h.timestamp >= $${values.length}`);
   }
   if (end) {
     values.push(end);
-    conditions.push(`timestamp <= $${values.length}`);
+    conditions.push(`h.timestamp <= $${values.length}`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const { rows } = await pool.query(
-    `SELECT id, team_id, field_name, old_value, new_value, transfer_player, timestamp FROM modification_history ${where} ORDER BY timestamp DESC`,
+    `
+    SELECT h.id, h.team_id, t.team_name, h.field_name, h.old_value, h.new_value, h.transfer_player, h.timestamp
+    FROM modification_history h
+    LEFT JOIN teams t ON h.team_id = t.id
+    ${where}
+    ORDER BY h.timestamp DESC
+    `,
     values
   );
-  res.json(rows);
+  const mapped = rows.map((r) => ({
+    ...r,
+    change_value: computeChange(r.old_value, r.new_value)
+  }));
+  res.json(mapped);
 });
 
 router.get("/export", async (req, res) => {
-  const { rows } = await pool.query(
-    "SELECT timestamp, team_id, field_name, old_value, new_value, transfer_player FROM modification_history ORDER BY timestamp DESC"
-  );
-  const csv = stringify(rows, {
+  const { rows } = await pool.query(`
+    SELECT h.timestamp, t.team_name, h.field_name, h.old_value, h.new_value, h.transfer_player
+    FROM modification_history h
+    LEFT JOIN teams t ON h.team_id = t.id
+    ORDER BY h.timestamp DESC
+  `);
+
+  const mapped = rows.map((r) => ({
+    timestamp: r.timestamp,
+    field_name: r.field_name,
+    team_name: r.team_name || "",
+    change_value: computeChange(r.old_value, r.new_value),
+    new_value: r.new_value,
+    transfer_player: r.transfer_player || ""
+  }));
+
+  const csv = stringify(mapped, {
     header: true,
     columns: [
       { key: "timestamp", header: "时间" },
-      { key: "team_id", header: "球队ID" },
       { key: "field_name", header: "字段" },
-      { key: "old_value", header: "旧值" },
+      { key: "team_name", header: "球队" },
+      { key: "change_value", header: "变化值" },
       { key: "new_value", header: "新值" },
       { key: "transfer_player", header: "球员" }
     ]
@@ -71,6 +94,15 @@ router.delete("/", authMiddleware, async (req, res) => {
   await pool.query("DELETE FROM modification_history");
   res.json({ message: "历史记录已清空" });
 });
+
+function computeChange(oldVal, newVal) {
+  const nOld = Number(oldVal);
+  const nNew = Number(newVal);
+  if (Number.isFinite(nOld) && Number.isFinite(nNew)) {
+    return nNew - nOld;
+  }
+  return "";
+}
 
 module.exports = router;
 module.exports.logHistory = logHistory;
