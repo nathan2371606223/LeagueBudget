@@ -3,7 +3,8 @@ import { useState } from "react";
 function parseBatch(text) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
   return lines.map((line) => {
-    const parts = line.split(/[\t,]/).map((p) => p.trim());
+    // Split by tab, English comma, or Chinese comma
+    const parts = line.split(/[\t,，]/).map((p) => p.trim());
     const [teamIn, teamOut, price, player] = parts;
     return { teamIn, teamOut, price, player };
   });
@@ -79,9 +80,24 @@ export default function TransferImport({ onSubmit }) {
           <textarea
             rows={6}
             style={{ width: "100%" }}
-            placeholder="格式: 转入球队,转出球队,价格,球员 （支持逗号或制表符分隔）"
+            placeholder="格式: 转入球队,转出球队,价格,球员 （分隔符支持：制表符、逗号、中文逗号）"
             value={batchText}
             onChange={(e) => setBatchText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Tab") {
+                e.preventDefault();
+                const target = e.target;
+                const start = target.selectionStart;
+                const end = target.selectionEnd;
+                const value = target.value;
+                const newValue = `${value.substring(0, start)}\t${value.substring(end)}`;
+                setBatchText(newValue);
+                // Restore caret position after inserting tab
+                requestAnimationFrame(() => {
+                  target.selectionStart = target.selectionEnd = start + 1;
+                });
+              }
+            }}
           />
         </div>
       )}
