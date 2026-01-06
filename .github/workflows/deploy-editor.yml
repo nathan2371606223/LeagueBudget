@@ -32,4 +32,4 @@ jobs:
           publish_dir: frontend-editor/dist
           publish_branch: gh-pages
           destination_dir: editor
-          force_orphan: true
+          keep_files: true
