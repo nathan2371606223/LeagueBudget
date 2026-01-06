@@ -6,6 +6,13 @@ const { logHistory } = require("./history");
 
 const router = express.Router();
 
+function parsePrice(raw) {
+  if (raw === null || raw === undefined) return NaN;
+  if (typeof raw === "number") return raw;
+  const cleaned = String(raw).trim().replace(/[,，\s]/g, "").replace(/[￥¥$]/g, "");
+  return Number.parseFloat(cleaned);
+}
+
 router.post("/process", authMiddleware, async (req, res) => {
   const transfers = req.body?.transfers || [];
   if (!Array.isArray(transfers) || !transfers.length) {
@@ -23,7 +30,7 @@ router.post("/process", authMiddleware, async (req, res) => {
   transfers.forEach((record) => {
     const teamInName = record.teamIn;
     const teamOutName = record.teamOut;
-    const price = Number(record.price);
+    const price = parsePrice(record.price);
     const player = record.player || "";
     if (!Number.isFinite(price) || price <= 0) {
       warnings.push({ team: `${teamInName || ""}/${teamOutName || ""}`, reason: "价格无效" });
