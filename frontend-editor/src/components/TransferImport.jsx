@@ -5,14 +5,17 @@ function parseBatch(text) {
   return lines.map((line) => {
     // Split by tab, English comma, or Chinese comma
     const parts = line.split(/[\t,，]/).map((p) => p.trim());
-    const [teamOut, teamIn, price, player] = parts;
+    const [teamOut, teamIn, price, ...players] = parts;
+    const player = (players && players.length)
+      ? players.slice(0, 4).filter(Boolean).join(" / ")
+      : "";
     return { teamIn, teamOut, price, player };
   });
 }
 
 export default function TransferImport({ onSubmit }) {
   const [mode, setMode] = useState("manual");
-  const [entries, setEntries] = useState([{ teamIn: "", teamOut: "", price: "", player: "" }]);
+  const [entries, setEntries] = useState([{ teamIn: "", teamOut: "", price: "", players: ["", "", "", ""] }]);
   const [batchText, setBatchText] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,12 +28,33 @@ export default function TransferImport({ onSubmit }) {
     });
   };
 
-  const addRow = () => setEntries((prev) => [...prev, { teamIn: "", teamOut: "", price: "", player: "" }]);
+  const updatePlayer = (idx, playerIdx, value) => {
+    setEntries((prev) => {
+      const next = [...prev];
+      const players = [...next[idx].players];
+      players[playerIdx] = value;
+      next[idx] = { ...next[idx], players };
+      return next;
+    });
+  };
+
+  const addRow = () => setEntries((prev) => [...prev, { teamIn: "", teamOut: "", price: "", players: ["", "", "", ""] }]);
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const payload = mode === "manual" ? entries : parseBatch(batchText);
+      let payload;
+      if (mode === "manual") {
+        // Convert players array to joined string
+        payload = entries.map((e) => ({
+          teamIn: e.teamIn,
+          teamOut: e.teamOut,
+          price: e.price,
+          player: e.players.filter(Boolean).join(" / ")
+        }));
+      } else {
+        payload = parseBatch(batchText);
+      }
       const res = await onSubmit(payload);
       setResult(res);
     } catch (err) {
@@ -54,7 +78,7 @@ export default function TransferImport({ onSubmit }) {
       {mode === "manual" ? (
         <div>
           {entries.map((row, idx) => (
-            <div key={idx} style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 8 }}>
+            <div key={idx} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 8 }}>
               <input
                 placeholder="转出球队"
                 value={row.teamOut}
@@ -67,9 +91,24 @@ export default function TransferImport({ onSubmit }) {
               />
               <input placeholder="价格" value={row.price} onChange={(e) => updateEntry(idx, "price", e.target.value)} />
               <input
-                placeholder="球员"
-                value={row.player}
-                onChange={(e) => updateEntry(idx, "player", e.target.value)}
+                placeholder="球员1"
+                value={row.players[0]}
+                onChange={(e) => updatePlayer(idx, 0, e.target.value)}
+              />
+              <input
+                placeholder="球员2"
+                value={row.players[1]}
+                onChange={(e) => updatePlayer(idx, 1, e.target.value)}
+              />
+              <input
+                placeholder="球员3"
+                value={row.players[2]}
+                onChange={(e) => updatePlayer(idx, 2, e.target.value)}
+              />
+              <input
+                placeholder="球员4"
+                value={row.players[3]}
+                onChange={(e) => updatePlayer(idx, 3, e.target.value)}
               />
             </div>
           ))}
@@ -80,7 +119,7 @@ export default function TransferImport({ onSubmit }) {
           <textarea
             rows={6}
             style={{ width: "100%" }}
-            placeholder="格式: 转出球队,转入球队,价格,球员 （分隔符支持：制表符、逗号、中文逗号）"
+            placeholder={"格式: 转出球队,转入球队,价格,球员1[,球员2][,球员3][,球员4]\n（分隔符：制表符/逗号/中文逗号，球员2-4可选）"}
             value={batchText}
             onChange={(e) => setBatchText(e.target.value)}
             onKeyDown={(e) => {

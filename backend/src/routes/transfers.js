@@ -35,7 +35,13 @@ router.post("/process", authMiddleware, async (req, res) => {
     const teamInName = record.teamIn;
     const teamOutName = record.teamOut;
     const price = parsePrice(record.price);
-    const player = record.player || "";
+    const playersArr = Array.isArray(record.player)
+      ? record.player
+      : String(record.player || "")
+          .split(/[\/,，\s]+/)
+          .map((p) => p.trim())
+          .filter(Boolean);
+    const player = playersArr.slice(0, 4).join(" / ");
     if (!Number.isFinite(price) || price <= 0) {
       warnings.push({ team: `${teamInName || ""}/${teamOutName || ""}`, reason: "价格无效" });
       return;
