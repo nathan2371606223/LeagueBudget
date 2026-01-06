@@ -6,9 +6,63 @@ const { runMigrations } = require("../db/migrations");
 
 const router = express.Router();
 
+async function getLevelNames() {
+  const keys = ["level_name_1", "level_name_2", "level_name_3"];
+  const names = {};
+  for (const key of keys) {
+    const { rows } = await pool.query("SELECT value FROM config WHERE key=$1", [key]);
+    names[key] = rows.length ? rows[0].value : null;
+  }
+  return {
+    1: names.level_name_1 || "Level 1",
+    2: names.level_name_2 || "Level 2",
+    3: names.level_name_3 || "Level 3"
+  };
+}
+
 router.get("/", async (req, res) => {
   const { rows } = await pool.query("SELECT * FROM teams ORDER BY level ASC, position_order ASC");
   res.json(rows);
+});
+
+router.get("/levels", async (req, res) => {
+  const levels = await getLevelNames();
+  res.json(levels);
+});
+
+router.put("/levels", authMiddleware, async (req, res) => {
+  const { level1, level2, level3 } = req.body || {};
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (level1 !== undefined) {
+      await client.query(
+        "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+        ["level_name_1", level1]
+      );
+    }
+    if (level2 !== undefined) {
+      await client.query(
+        "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+        ["level_name_2", level2]
+      );
+    }
+    if (level3 !== undefined) {
+      await client.query(
+        "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+        ["level_name_3", level3]
+      );
+    }
+    await client.query("COMMIT");
+    const levels = await getLevelNames();
+    res.json(levels);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ message: "更新级别名称失败" });
+  } finally {
+    client.release();
+  }
 });
 
 router.get("/init-check", async (req, res) => {

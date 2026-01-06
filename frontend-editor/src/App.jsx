@@ -8,23 +8,26 @@ import {
   login as apiLogin,
   changePassword,
   fetchTeams,
+  fetchLevels,
   initCheck,
   initializeTeams,
   updateTeam,
   swapTeams,
-  processTransfers
+  processTransfers,
+  updateLevels
 } from "./services/api";
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [teams, setTeams] = useState([]);
+  const [levels, setLevels] = useState({ 1: "Level 1", 2: "Level 2", 3: "Level 3" });
   const [status, setStatus] = useState("");
 
   useEffect(() => {
     if (!token) return;
     const bootstrap = async () => {
       await ensureInitialized();
-      await loadTeams();
+      await Promise.all([loadTeams(), loadLevels()]);
     };
     bootstrap().catch((err) => setStatus(err?.response?.data?.message || "加载失败"));
   }, [token]);
@@ -49,10 +52,20 @@ export default function App() {
     setToken(tk);
   };
 
+  const loadLevels = async () => {
+    const data = await fetchLevels();
+    setLevels(data);
+  };
+
   const handleChangePassword = (oldPassword, newPassword) => changePassword(token, oldPassword, newPassword);
 
   const handleBudgetSave = async (teamId, budget) => {
     await updateTeam(token, teamId, { budget });
+    await loadTeams();
+  };
+
+  const handleNameSave = async (teamId, name) => {
+    await updateTeam(token, teamId, { team_name: name });
     await loadTeams();
   };
 
@@ -65,6 +78,15 @@ export default function App() {
     const res = await processTransfers(token, records);
     await loadTeams();
     return res;
+  };
+
+  const handleLevelNameSave = async (level, name) => {
+    const payload = {};
+    if (level === 1) payload.level1 = name;
+    if (level === 2) payload.level2 = name;
+    if (level === 3) payload.level3 = name;
+    await updateLevels(token, payload);
+    await loadLevels();
   };
 
   const logout = () => {
@@ -89,7 +111,14 @@ export default function App() {
       </header>
 
       <ChangePassword onChangePassword={handleChangePassword} />
-      <TeamTable teams={teams} onBudgetSave={handleBudgetSave} onSwap={handleSwap} />
+      <TeamTable
+        teams={teams}
+        levelNames={levels}
+        onBudgetSave={handleBudgetSave}
+        onNameSave={handleNameSave}
+        onSwap={handleSwap}
+        onLevelNameSave={handleLevelNameSave}
+      />
       <TransferImport onSubmit={handleTransfers} />
       <ExportButtons token={token} />
     </div>

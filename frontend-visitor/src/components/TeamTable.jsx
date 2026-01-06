@@ -1,4 +1,4 @@
-export default function TeamTable({ teams }) {
+export default function TeamTable({ teams, levelNames }) {
   const grouped = [1, 2, 3].map((level) => ({
     level,
     teams: teams.filter((t) => Number(t.level) === level).sort((a, b) => a.position_order - b.position_order)
@@ -10,7 +10,7 @@ export default function TeamTable({ teams }) {
       <div style={{ display: "flex", gap: 16 }}>
         {grouped.map((group) => (
           <div key={group.level} style={{ flex: 1 }}>
-            <h4>级别 {group.level}</h4>
+            <h4>{levelNames?.[group.level] || `级别 ${group.level}`}</h4>
             <table width="100%" border="1" cellPadding="6">
               <thead>
                 <tr>

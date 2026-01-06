@@ -1,7 +1,9 @@
 import { useState } from "react";
 
-export default function TeamTable({ teams, onBudgetSave, onSwap }) {
-  const [editing, setEditing] = useState({});
+export default function TeamTable({ teams, levelNames, onBudgetSave, onNameSave, onSwap, onLevelNameSave }) {
+  const [editingBudget, setEditingBudget] = useState({});
+  const [editingName, setEditingName] = useState({});
+  const [levelTitle, setLevelTitle] = useState(levelNames || {});
   const [dragId, setDragId] = useState(null);
 
   const grouped = [1, 2, 3].map((level) => ({
@@ -9,13 +11,24 @@ export default function TeamTable({ teams, onBudgetSave, onSwap }) {
     teams: teams.filter((t) => Number(t.level) === level).sort((a, b) => a.position_order - b.position_order)
   }));
 
-  const handleBlur = (teamId) => {
-    const value = editing[teamId];
+  const saveBudget = (teamId) => {
+    const value = editingBudget[teamId];
     if (value === undefined) return;
     const budget = Number(value);
     if (Number.isNaN(budget)) return;
     onBudgetSave(teamId, budget);
-    setEditing((prev) => {
+    setEditingBudget((prev) => {
+      const next = { ...prev };
+      delete next[teamId];
+      return next;
+    });
+  };
+
+  const saveName = (teamId) => {
+    const value = editingName[teamId];
+    if (value === undefined) return;
+    onNameSave(teamId, value);
+    setEditingName((prev) => {
       const next = { ...prev };
       delete next[teamId];
       return next;
@@ -29,14 +42,27 @@ export default function TeamTable({ teams, onBudgetSave, onSwap }) {
     setDragId(null);
   };
 
+  const handleLevelBlur = (level) => {
+    const newName = levelTitle[level];
+    onLevelNameSave(level, newName);
+  };
+
   return (
     <div>
       <h3>球队列表</h3>
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
         {grouped.map((group) => (
           <div key={group.level} style={{ flex: 1 }}>
-            <h4>级别 {group.level}</h4>
-            <table width="100%" border="1" cellPadding="6">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span>级别名称：</span>
+              <input
+                style={{ width: "100%" }}
+                value={levelTitle[group.level] || ""}
+                onChange={(e) => setLevelTitle((prev) => ({ ...prev, [group.level]: e.target.value }))}
+                onBlur={() => handleLevelBlur(group.level)}
+              />
+            </div>
+            <table width="100%" border="1" cellPadding="6" style={{ marginTop: 8 }}>
               <thead>
                 <tr>
                   <th>球队名称</th>
@@ -53,20 +79,35 @@ export default function TeamTable({ teams, onBudgetSave, onSwap }) {
                     onDrop={() => handleDrop(team.id)}
                     style={{ cursor: "move" }}
                   >
-                    <td>{team.team_name}</td>
                     <td>
                       <input
                         style={{ width: "100%" }}
-                        value={editing[team.id] !== undefined ? editing[team.id] : team.budget}
+                        value={editingName[team.id] !== undefined ? editingName[team.id] : team.team_name}
                         onChange={(e) =>
-                          setEditing((prev) => ({
+                          setEditingName((prev) => ({
                             ...prev,
                             [team.id]: e.target.value
                           }))
                         }
-                        onBlur={() => handleBlur(team.id)}
+                        onBlur={() => saveName(team.id)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") handleBlur(team.id);
+                          if (e.key === "Enter") saveName(team.id);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        style={{ width: "100%" }}
+                        value={editingBudget[team.id] !== undefined ? editingBudget[team.id] : team.budget}
+                        onChange={(e) =>
+                          setEditingBudget((prev) => ({
+                            ...prev,
+                            [team.id]: e.target.value
+                          }))
+                        }
+                        onBlur={() => saveBudget(team.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveBudget(team.id);
                         }}
                       />
                     </td>

@@ -7,3 +7,8 @@ export async function fetchTeams() {
   return res.data;
 }
 
+export async function fetchLevels() {
+  const res = await axios.get(`${API_BASE}/teams/levels`);
+  return res.data;
+}
+

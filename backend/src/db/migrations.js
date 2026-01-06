@@ -37,6 +37,7 @@ async function runMigrations() {
   `);
 
   await ensureDefaultPassword();
+  await ensureDefaultLevelNames();
   await ensureTeamsInitialized();
 }
 
@@ -45,6 +46,20 @@ async function ensureDefaultPassword() {
   if (rows.length === 0) {
     const hashed = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
     await pool.query("INSERT INTO config (key, value) VALUES ($1, $2)", ["public_password", hashed]);
+  }
+}
+
+async function ensureDefaultLevelNames() {
+  const defaults = [
+    { key: "level_name_1", value: "Level 1" },
+    { key: "level_name_2", value: "Level 2" },
+    { key: "level_name_3", value: "Level 3" }
+  ];
+  for (const item of defaults) {
+    const { rows } = await pool.query("SELECT value FROM config WHERE key = $1", [item.key]);
+    if (!rows.length) {
+      await pool.query("INSERT INTO config (key, value) VALUES ($1, $2)", [item.key, item.value]);
+    }
   }
 }
 

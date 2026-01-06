@@ -35,6 +35,16 @@ export async function fetchTeams() {
   return res.data;
 }
 
+export async function fetchLevels() {
+  const res = await axios.get(`${API_BASE}/teams/levels`);
+  return res.data;
+}
+
+export async function updateLevels(token, payload) {
+  const res = await axios.put(`${API_BASE}/teams/levels`, payload, { headers: authHeaders(token) });
+  return res.data;
+}
+
 export async function updateTeam(token, id, data) {
   const res = await axios.put(`${API_BASE}/teams/${id}`, data, { headers: authHeaders(token) });
   return res.data;

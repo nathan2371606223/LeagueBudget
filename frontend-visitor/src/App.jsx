@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import TeamTable from "./components/TeamTable";
-import { fetchTeams } from "./services/api";
+import { fetchTeams, fetchLevels } from "./services/api";
 import { deepCompareTeams } from "./services/dataComparator";
 
 const BASE_INTERVAL = 600000; // 10 minutes
@@ -8,6 +8,7 @@ const MAX_INTERVAL = 28800000; // 8 hours
 
 export default function App() {
   const [teams, setTeams] = useState([]);
+  const [levels, setLevels] = useState({ 1: "Level 1", 2: "Level 2", 3: "Level 3" });
   const [intervalMs, setIntervalMs] = useState(BASE_INTERVAL);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [status, setStatus] = useState("");
@@ -16,9 +17,10 @@ export default function App() {
 
   const poll = async () => {
     try {
-      const data = await fetchTeams();
+      const [data, lvl] = await Promise.all([fetchTeams(), fetchLevels()]);
       if (!deepCompareTeams(lastDataRef.current, data)) {
         setTeams(data);
+        setLevels(lvl);
         lastDataRef.current = data;
         setIntervalMs(BASE_INTERVAL);
         setLastUpdated(new Date());
@@ -62,7 +64,7 @@ export default function App() {
           <button onClick={resetInterval}>立即刷新</button>
         )}
       </header>
-      <TeamTable teams={teams} />
+      <TeamTable teams={teams} levelNames={levels} />
     </div>
   );
 }
