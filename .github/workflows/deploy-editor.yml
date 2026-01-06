@@ -28,4 +28,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: frontend-editor/dist
           publish_branch: gh-pages
+          destination_dir: editor
           force_orphan: true
