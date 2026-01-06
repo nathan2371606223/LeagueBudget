@@ -5,7 +5,7 @@ function parseBatch(text) {
   return lines.map((line) => {
     // Split by tab, English comma, or Chinese comma
     const parts = line.split(/[\t,，]/).map((p) => p.trim());
-    const [teamIn, teamOut, price, player] = parts;
+    const [teamOut, teamIn, price, player] = parts;
     return { teamIn, teamOut, price, player };
   });
 }
