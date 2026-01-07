@@ -98,5 +98,38 @@ async function ensureTeamsInitialized() {
   }
 }
 
-module.exports = { runMigrations };
+async function dropOldTables() {
+  // Drop old tables if they exist (after migration to lb_* tables)
+  // Note: This will permanently delete data in old tables
+  // Make sure data has been migrated to lb_* tables before running this
+  
+  const tables = ['modification_history', 'teams', 'config'];
+  
+  for (const table of tables) {
+    try {
+      // Check if table exists
+      const { rows } = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        );
+      `, [table]);
+      
+      if (rows[0].exists) {
+        console.log(`Dropping old table: ${table}...`);
+        // Drop with CASCADE to handle foreign key constraints
+        await pool.query(`DROP TABLE IF EXISTS ${table} CASCADE;`);
+        console.log(`✓ Successfully dropped table: ${table}`);
+      } else {
+        console.log(`- Table ${table} does not exist, skipping`);
+      }
+    } catch (err) {
+      console.error(`✗ Error dropping table ${table}:`, err.message || err);
+      // Continue with other tables even if one fails
+    }
+  }
+}
+
+module.exports = { runMigrations, dropOldTables };
 

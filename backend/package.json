@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "node src/db/migrations.js"
+    "migrate": "node src/db/migrations.js",
+    "drop-old-tables": "node scripts/drop-old-tables.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
