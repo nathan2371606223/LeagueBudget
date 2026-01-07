@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function TeamTable({ teams, levelNames, onBudgetSave, onNameSave, onSwap, onLevelNameSave }) {
   const [editingBudget, setEditingBudget] = useState({});
   const [editingName, setEditingName] = useState({});
   const [levelTitle, setLevelTitle] = useState(levelNames || {});
   const [dragId, setDragId] = useState(null);
+
+  // Sync levelTitle with levelNames prop when it updates
+  useEffect(() => {
+    if (levelNames && Object.keys(levelNames).length > 0) {
+      setLevelTitle(levelNames);
+    }
+  }, [levelNames]);
 
   const grouped = [1, 2, 3].map((level) => ({
     level,
