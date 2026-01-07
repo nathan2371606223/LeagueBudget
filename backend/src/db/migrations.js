@@ -98,6 +98,9 @@ async function ensureTeamsInitialized() {
   }
 }
 
+// NOTE: This function is no longer needed as old tables have been cleaned up.
+// Kept for reference only. If needed in the future, uncomment and use.
+/*
 async function dropOldTables() {
   // Drop old tables if they exist (after migration to lb_* tables)
   // Note: This will permanently delete data in old tables
@@ -130,6 +133,7 @@ async function dropOldTables() {
     }
   }
 }
+*/
 
-module.exports = { runMigrations, dropOldTables };
+module.exports = { runMigrations };
 
