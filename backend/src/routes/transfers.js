@@ -42,7 +42,7 @@ router.post("/process", authMiddleware, async (req, res) => {
           .map((p) => p.trim())
           .filter(Boolean);
     const player = playersArr.slice(0, 4).join(" / ");
-    if (!Number.isFinite(price) || price <= 0) {
+    if (!Number.isFinite(price) || price < 0) {
       warnings.push({ team: `${teamInName || ""}/${teamOutName || ""}`, reason: "价格无效" });
       return;
     }
