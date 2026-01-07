@@ -6,14 +6,14 @@ const SALT_ROUNDS = 10;
 
 async function runMigrations() {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS config (
+    CREATE TABLE IF NOT EXISTS lb_config (
       key VARCHAR(255) PRIMARY KEY,
       value TEXT
     );
   `);
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS teams (
+    CREATE TABLE IF NOT EXISTS lb_teams (
       id SERIAL PRIMARY KEY,
       level INTEGER NOT NULL,
       team_name VARCHAR(255) NOT NULL,
@@ -25,9 +25,9 @@ async function runMigrations() {
   `);
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS modification_history (
+    CREATE TABLE IF NOT EXISTS lb_modification_history (
       id SERIAL PRIMARY KEY,
-      team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+      team_id INTEGER REFERENCES lb_teams(id) ON DELETE SET NULL,
       field_name VARCHAR(255) NOT NULL,
       old_value TEXT,
       new_value TEXT,
@@ -42,10 +42,10 @@ async function runMigrations() {
 }
 
 async function ensureDefaultPassword() {
-  const { rows } = await pool.query("SELECT value FROM config WHERE key = 'public_password'");
+  const { rows } = await pool.query("SELECT value FROM lb_config WHERE key = 'public_password'");
   if (rows.length === 0) {
     const hashed = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
-    await pool.query("INSERT INTO config (key, value) VALUES ($1, $2)", ["public_password", hashed]);
+    await pool.query("INSERT INTO lb_config (key, value) VALUES ($1, $2)", ["public_password", hashed]);
   }
 }
 
@@ -56,20 +56,20 @@ async function ensureDefaultLevelNames() {
     { key: "level_name_3", value: "Level 3" }
   ];
   for (const item of defaults) {
-    const { rows } = await pool.query("SELECT value FROM config WHERE key = $1", [item.key]);
+    const { rows } = await pool.query("SELECT value FROM lb_config WHERE key = $1", [item.key]);
     if (!rows.length) {
-      await pool.query("INSERT INTO config (key, value) VALUES ($1, $2)", [item.key, item.value]);
+      await pool.query("INSERT INTO lb_config (key, value) VALUES ($1, $2)", [item.key, item.value]);
     }
   }
 }
 
 async function ensureTeamsInitialized() {
-  const initFlag = await pool.query("SELECT value FROM config WHERE key = 'initialized'");
+  const initFlag = await pool.query("SELECT value FROM lb_config WHERE key = 'initialized'");
   if (initFlag.rows.length && initFlag.rows[0].value === "true") return;
 
-  const { rows: countRows } = await pool.query("SELECT COUNT(*)::int as count FROM teams");
+  const { rows: countRows } = await pool.query("SELECT COUNT(*)::int as count FROM lb_teams");
   if (countRows[0].count > 0) {
-    await pool.query("INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", ["initialized", "true"]);
+    await pool.query("INSERT INTO lb_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", ["initialized", "true"]);
     return;
   }
 
@@ -80,13 +80,13 @@ async function ensureTeamsInitialized() {
       for (let i = 1; i <= 20; i += 1) {
         const name = `Level ${level} Team ${i}`;
         await client.query(
-          "INSERT INTO teams (level, team_name, budget, position_order) VALUES ($1, $2, $3, $4)",
+          "INSERT INTO lb_teams (level, team_name, budget, position_order) VALUES ($1, $2, $3, $4)",
           [level, name, 0, i]
         );
       }
     }
     await client.query(
-      "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+      "INSERT INTO lb_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
       ["initialized", "true"]
     );
     await client.query("COMMIT");

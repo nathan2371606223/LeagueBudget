@@ -10,7 +10,7 @@ async function getLevelNames() {
   const keys = ["level_name_1", "level_name_2", "level_name_3"];
   const names = {};
   for (const key of keys) {
-    const { rows } = await pool.query("SELECT value FROM config WHERE key=$1", [key]);
+    const { rows } = await pool.query("SELECT value FROM lb_config WHERE key=$1", [key]);
     names[key] = rows.length ? rows[0].value : null;
   }
   return {
@@ -21,7 +21,7 @@ async function getLevelNames() {
 }
 
 router.get("/", async (req, res) => {
-  const { rows } = await pool.query("SELECT * FROM teams ORDER BY level ASC, position_order ASC");
+  const { rows } = await pool.query("SELECT * FROM lb_teams ORDER BY level ASC, position_order ASC");
   res.json(rows);
 });
 
@@ -37,19 +37,19 @@ router.put("/levels", authMiddleware, async (req, res) => {
     await client.query("BEGIN");
     if (level1 !== undefined) {
       await client.query(
-        "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+        "INSERT INTO lb_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
         ["level_name_1", level1]
       );
     }
     if (level2 !== undefined) {
       await client.query(
-        "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+        "INSERT INTO lb_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
         ["level_name_2", level2]
       );
     }
     if (level3 !== undefined) {
       await client.query(
-        "INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+        "INSERT INTO lb_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
         ["level_name_3", level3]
       );
     }
@@ -66,14 +66,14 @@ router.put("/levels", authMiddleware, async (req, res) => {
 });
 
 router.get("/init-check", async (req, res) => {
-  const { rows } = await pool.query("SELECT value FROM config WHERE key = 'initialized'");
+  const { rows } = await pool.query("SELECT value FROM lb_config WHERE key = 'initialized'");
   res.json({ initialized: rows.length ? rows[0].value === "true" : false });
 });
 
 router.post("/initialize", async (req, res) => {
   try {
     await runMigrations();
-    const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM teams");
+    const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM lb_teams");
     res.json({ initialized: true, teamCount: rows[0].count });
   } catch (err) {
     console.error(err);
@@ -84,7 +84,7 @@ router.post("/initialize", async (req, res) => {
 router.put("/:id", authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
   const { team_name, budget, level } = req.body || {};
-  const { rows } = await pool.query("SELECT * FROM teams WHERE id=$1", [id]);
+  const { rows } = await pool.query("SELECT * FROM lb_teams WHERE id=$1", [id]);
   if (!rows.length) return res.status(404).json({ message: "未找到球队" });
   const team = rows[0];
 
@@ -105,7 +105,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
   if (!updates.length) return res.json(team);
   values.push(id);
   const setClause = updates.join(", ");
-  const updateSql = `UPDATE teams SET ${setClause}, updated_at=NOW() WHERE id=$${values.length} RETURNING *`;
+  const updateSql = `UPDATE lb_teams SET ${setClause}, updated_at=NOW() WHERE id=$${values.length} RETURNING *`;
   const { rows: updatedRows } = await pool.query(updateSql, values);
   const updated = updatedRows[0];
 
@@ -125,10 +125,10 @@ router.put("/:id", authMiddleware, async (req, res) => {
 router.post("/", authMiddleware, async (req, res) => {
   const { team_name, level = 1, budget = 0 } = req.body || {};
   if (!team_name) return res.status(400).json({ message: "球队名称必填" });
-  const { rows: last } = await pool.query("SELECT COALESCE(MAX(position_order),0) as max FROM teams WHERE level=$1", [level]);
+  const { rows: last } = await pool.query("SELECT COALESCE(MAX(position_order),0) as max FROM lb_teams WHERE level=$1", [level]);
   const position_order = Number(last[0].max) + 1;
   const { rows } = await pool.query(
-    "INSERT INTO teams (team_name, level, budget, position_order) VALUES ($1, $2, $3, $4) RETURNING *",
+    "INSERT INTO lb_teams (team_name, level, budget, position_order) VALUES ($1, $2, $3, $4) RETURNING *",
     [team_name, level, budget, position_order]
   );
   await logHistory({ teamId: rows[0].id, fieldName: "create", oldValue: null, newValue: { team_name, level, budget } });
@@ -137,9 +137,9 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.delete("/:id", authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
-  const { rows } = await pool.query("SELECT * FROM teams WHERE id=$1", [id]);
+  const { rows } = await pool.query("SELECT * FROM lb_teams WHERE id=$1", [id]);
   if (!rows.length) return res.status(404).json({ message: "未找到球队" });
-  await pool.query("DELETE FROM teams WHERE id=$1", [id]);
+  await pool.query("DELETE FROM lb_teams WHERE id=$1", [id]);
   await logHistory({ teamId: id, fieldName: "delete", oldValue: rows[0], newValue: null });
   res.json({ message: "已删除" });
 });
@@ -147,7 +147,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 router.post("/swap", authMiddleware, async (req, res) => {
   const { team1Id, team2Id } = req.body || {};
   if (!team1Id || !team2Id) return res.status(400).json({ message: "需要两个球队ID" });
-  const { rows } = await pool.query("SELECT * FROM teams WHERE id = ANY($1::int[])", [[team1Id, team2Id]]);
+  const { rows } = await pool.query("SELECT * FROM lb_teams WHERE id = ANY($1::int[])", [[team1Id, team2Id]]);
   if (rows.length !== 2) return res.status(404).json({ message: "有球队未找到" });
   const t1 = rows.find((t) => t.id === Number(team1Id));
   const t2 = rows.find((t) => t.id === Number(team2Id));
@@ -156,11 +156,11 @@ router.post("/swap", authMiddleware, async (req, res) => {
   try {
     await client.query("BEGIN");
     await client.query(
-      "UPDATE teams SET level=$1, position_order=$2, updated_at=NOW() WHERE id=$3",
+      "UPDATE lb_teams SET level=$1, position_order=$2, updated_at=NOW() WHERE id=$3",
       [t2.level, t2.position_order, t1.id]
     );
     await client.query(
-      "UPDATE teams SET level=$1, position_order=$2, updated_at=NOW() WHERE id=$3",
+      "UPDATE lb_teams SET level=$1, position_order=$2, updated_at=NOW() WHERE id=$3",
       [t1.level, t1.position_order, t2.id]
     );
     await client.query("COMMIT");

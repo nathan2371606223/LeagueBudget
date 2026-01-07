@@ -14,7 +14,7 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ message: "请输入密码" });
   }
   try {
-    const { rows } = await pool.query("SELECT value FROM config WHERE key = 'public_password'");
+    const { rows } = await pool.query("SELECT value FROM lb_config WHERE key = 'public_password'");
     if (!rows.length) {
       return res.status(500).json({ message: "系统未初始化密码" });
     }
@@ -37,13 +37,13 @@ router.post("/change-password", authMiddleware, async (req, res) => {
     return res.status(400).json({ message: "请提供原密码和新密码" });
   }
   try {
-    const { rows } = await pool.query("SELECT value FROM config WHERE key = 'public_password'");
+    const { rows } = await pool.query("SELECT value FROM lb_config WHERE key = 'public_password'");
     if (!rows.length) return res.status(500).json({ message: "系统未初始化密码" });
     const hashed = rows[0].value;
     const ok = await bcrypt.compare(oldPassword, hashed);
     if (!ok) return res.status(401).json({ message: "原密码错误" });
     const newHashed = await bcrypt.hash(newPassword, 10);
-    await pool.query("UPDATE config SET value=$1 WHERE key='public_password'", [newHashed]);
+    await pool.query("UPDATE lb_config SET value=$1 WHERE key='public_password'", [newHashed]);
     return res.json({ message: "密码修改成功" });
   } catch (err) {
     console.error(err);

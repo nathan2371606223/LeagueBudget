@@ -7,7 +7,7 @@ const router = express.Router();
 
 async function logHistory({ teamId = null, fieldName, oldValue, newValue, transferPlayer = null }) {
   await pool.query(
-    "INSERT INTO modification_history (team_id, field_name, old_value, new_value, transfer_player) VALUES ($1, $2, $3, $4, $5)",
+    "INSERT INTO lb_modification_history (team_id, field_name, old_value, new_value, transfer_player) VALUES ($1, $2, $3, $4, $5)",
     [teamId, fieldName, toText(oldValue), toText(newValue), transferPlayer]
   );
 }
@@ -42,8 +42,8 @@ router.get("/", async (req, res) => {
   const offset = (Number(page) - 1) * Number(pageSize);
 
   const baseQuery = `
-    FROM modification_history h
-    LEFT JOIN teams t ON h.team_id = t.id
+    FROM lb_modification_history h
+    LEFT JOIN lb_teams t ON h.team_id = t.id
     ${where}
   `;
 
@@ -76,8 +76,8 @@ router.get("/", async (req, res) => {
 router.get("/export", async (req, res) => {
   const { rows } = await pool.query(`
     SELECT h.timestamp, t.team_name, h.field_name, h.old_value, h.new_value, h.transfer_player
-    FROM modification_history h
-    LEFT JOIN teams t ON h.team_id = t.id
+    FROM lb_modification_history h
+    LEFT JOIN lb_teams t ON h.team_id = t.id
     ORDER BY h.timestamp DESC
   `);
 
@@ -108,7 +108,7 @@ router.get("/export", async (req, res) => {
 });
 
 router.delete("/", authMiddleware, async (req, res) => {
-  await pool.query("DELETE FROM modification_history");
+  await pool.query("DELETE FROM lb_modification_history");
   res.json({ message: "历史记录已清空" });
 });
 

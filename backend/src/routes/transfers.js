@@ -23,7 +23,7 @@ router.post("/process", authMiddleware, async (req, res) => {
     return res.status(400).json({ message: "请提供转会记录" });
   }
 
-  const { rows: teams } = await pool.query("SELECT * FROM teams");
+  const { rows: teams } = await pool.query("SELECT * FROM lb_teams");
   const budgetMap = new Map();
   teams.forEach((t) => budgetMap.set(t.id, Number(t.budget)));
 
@@ -74,7 +74,7 @@ router.post("/process", authMiddleware, async (req, res) => {
       const oldBudget = budgetMap.get(upd.teamId) ?? 0;
       const newBudget = oldBudget + upd.delta;
       budgetMap.set(upd.teamId, newBudget);
-      await client.query("UPDATE teams SET budget=$1, updated_at=NOW() WHERE id=$2", [newBudget, upd.teamId]);
+      await client.query("UPDATE lb_teams SET budget=$1, updated_at=NOW() WHERE id=$2", [newBudget, upd.teamId]);
       await logHistory({
         teamId: upd.teamId,
         fieldName: "transfer",
