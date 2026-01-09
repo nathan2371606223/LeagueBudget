@@ -111,6 +111,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
 
   if (team_name !== undefined && team_name !== team.team_name) {
     await logHistory({ teamId: id, fieldName: "team_name", oldValue: team.team_name, newValue: team_name });
+    // Update team_name in lb_team_tokens table
+    await pool.query("UPDATE lb_team_tokens SET team_name=$1 WHERE team_id=$2", [team_name, id]);
   }
   if (budget !== undefined && Number(budget) !== Number(team.budget)) {
     await logHistory({ teamId: id, fieldName: "budget", oldValue: team.budget, newValue: budget });

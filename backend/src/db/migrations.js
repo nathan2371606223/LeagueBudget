@@ -110,10 +110,32 @@ async function ensureTeamTokens() {
     CREATE TABLE IF NOT EXISTS lb_team_tokens (
       team_id INTEGER PRIMARY KEY REFERENCES lb_teams(id) ON DELETE CASCADE,
       token TEXT UNIQUE NOT NULL,
+      team_name VARCHAR(255),
       active BOOLEAN DEFAULT true,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+  `);
+
+  // Add team_name column if it doesn't exist (for existing databases)
+  await pool.query(`
+    DO $$ 
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='lb_team_tokens' AND column_name='team_name'
+      ) THEN
+        ALTER TABLE lb_team_tokens ADD COLUMN team_name VARCHAR(255);
+      END IF;
+    END $$;
+  `);
+
+  // Populate team_name for existing records
+  await pool.query(`
+    UPDATE lb_team_tokens tt
+    SET team_name = t.team_name
+    FROM lb_teams t
+    WHERE tt.team_id = t.id AND (tt.team_name IS NULL OR tt.team_name != t.team_name);
   `);
 
   // Alert table
@@ -131,7 +153,7 @@ async function ensureTeamTokens() {
   `);
 
   // Seed tokens for teams without one
-  const { rows: teams } = await pool.query("SELECT id FROM lb_teams");
+  const { rows: teams } = await pool.query("SELECT id, team_name FROM lb_teams");
   for (const t of teams) {
     const { rows: existing } = await pool.query(
       "SELECT token FROM lb_team_tokens WHERE team_id=$1",
@@ -140,8 +162,14 @@ async function ensureTeamTokens() {
     if (existing.length === 0) {
       const token = generateToken();
       await pool.query(
-        "INSERT INTO lb_team_tokens (team_id, token) VALUES ($1, $2)",
-        [t.id, token]
+        "INSERT INTO lb_team_tokens (team_id, token, team_name) VALUES ($1, $2, $3)",
+        [t.id, token, t.team_name]
+      );
+    } else {
+      // Update team_name if it's missing or different
+      await pool.query(
+        "UPDATE lb_team_tokens SET team_name=$1 WHERE team_id=$2 AND (team_name IS NULL OR team_name != $1)",
+        [t.team_name, t.id]
       );
     }
   }
