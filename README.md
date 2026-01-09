@@ -6,7 +6,7 @@ Two GitHub Pages frontends (editor + visitor) with a Railway-hosted Node/Express
 
 - `backend/`: Express API, PostgreSQL migrations, JWT auth, transfer processing.
 - `frontend-editor/`: React editor site (password protected, Chinese UI).
-- `frontend-visitor/`: React visitor site (read-only, adaptive polling).
+- `frontend-visitor/`: React visitor site (read-only, manual refresh).
 - `DEPLOYMENT_MANUAL.md`: Step-by-step Windows-first deployment guide.
 
 ## Features
