@@ -31,7 +31,7 @@ Two GitHub Pages frontends (editor + visitor) with a Railway-hosted Node/Express
 ### Visitor Site
 - Read-only view of all teams and budgets
 - Grouped by level (with customizable level names)
-- Auto-refresh every 10 minutes (or manual refresh button)
+- Manual refresh button (no auto-refresh)
 - Shows modification history
 
 ## Quick Start (dev)
