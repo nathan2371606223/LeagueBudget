@@ -2,6 +2,32 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
 
+// Global handler for token expiration
+let onTokenExpired = null;
+
+export function setTokenExpiredHandler(handler) {
+  onTokenExpired = handler;
+}
+
+// Axios response interceptor to handle token expiration
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Check if it's a token expiration error
+      const message = error.response?.data?.message || "";
+      if (message.includes("过期") || message.includes("未授权") || message.includes("登录")) {
+        // Clear token and notify app
+        localStorage.removeItem("token");
+        if (onTokenExpired) {
+          onTokenExpired();
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 function authHeaders(token) {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

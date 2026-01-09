@@ -18,7 +18,8 @@ import {
   swapTeams,
   processTransfers,
   updateLevels,
-  fetchHistory
+  fetchHistory,
+  setTokenExpiredHandler
 } from "./services/api";
 
 export default function App() {
@@ -26,6 +27,17 @@ export default function App() {
   const [teams, setTeams] = useState([]);
   const [levels, setLevels] = useState({ 1: "Level 1", 2: "Level 2", 3: "Level 3" });
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    // Set up token expiration handler
+    setTokenExpiredHandler(() => {
+      setToken("");
+    });
+    
+    return () => {
+      setTokenExpiredHandler(null);
+    };
+  }, []);
 
   useEffect(() => {
     if (!token) return;
