@@ -104,3 +104,18 @@ export async function deleteTokenAlert(token, id) {
   const res = await axios.delete(`${API_BASE}/token-alerts/${id}`, { headers: authHeaders(token) });
   return res.data;
 }
+
+// Announcement
+export async function fetchAnnouncement(token) {
+  const res = await axios.get(`${API_BASE}/announcement`, {
+    headers: authHeaders(token)
+  });
+  return res.data;
+}
+
+export async function updateAnnouncement(token, content) {
+  const res = await axios.put(`${API_BASE}/announcement`, { content }, {
+    headers: authHeaders(token)
+  });
+  return res.data;
+}

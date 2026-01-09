@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import TeamTable from "./components/TeamTable";
 import HistoryViewer from "./components/HistoryViewer";
 import TokenGate from "./components/TokenGate";
+import Announcement from "./components/Announcement";
 import { fetchTeams, fetchLevels, fetchHistory, getStoredToken, setStoredToken } from "./services/api";
 
 export default function App() {
@@ -57,6 +58,7 @@ export default function App() {
 
   return (
     <div style={{ padding: 20 }}>
+      <Announcement />
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2>联赛预算管理 - 访客端</h2>

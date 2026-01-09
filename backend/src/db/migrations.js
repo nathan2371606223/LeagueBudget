@@ -173,6 +173,21 @@ async function ensureTeamTokens() {
       );
     }
   }
+
+  // Create announcement table for LeagueBudget
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS lb_announcement (
+      id SERIAL PRIMARY KEY,
+      content TEXT,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `);
+
+  // Initialize with empty announcement if none exists
+  const { rows: existingAnnouncement } = await pool.query("SELECT id FROM lb_announcement LIMIT 1");
+  if (existingAnnouncement.length === 0) {
+    await pool.query("INSERT INTO lb_announcement (content) VALUES ('')");
+  }
 }
 
 // NOTE: This function is no longer needed as old tables have been cleaned up.

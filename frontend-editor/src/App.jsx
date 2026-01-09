@@ -6,6 +6,7 @@ import TransferImport from "./components/TransferImport";
 import ExportButtons from "./components/ExportButtons";
 import HistoryViewer from "./components/HistoryViewer";
 import TokenAlerts from "./components/TokenAlerts";
+import Announcement from "./components/Announcement";
 import {
   login as apiLogin,
   changePassword,
@@ -114,6 +115,7 @@ export default function App() {
       </header>
 
       <ChangePassword onChangePassword={handleChangePassword} />
+      <Announcement token={token} />
       <TeamTable
         teams={teams}
         levelNames={levels}
