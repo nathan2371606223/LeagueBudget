@@ -5,6 +5,7 @@ import TeamTable from "./components/TeamTable";
 import TransferImport from "./components/TransferImport";
 import ExportButtons from "./components/ExportButtons";
 import HistoryViewer from "./components/HistoryViewer";
+import TokenAlerts from "./components/TokenAlerts";
 import {
   login as apiLogin,
   changePassword,
@@ -124,6 +125,7 @@ export default function App() {
       <TransferImport onSubmit={handleTransfers} />
       <ExportButtons token={token} />
       <HistoryViewer fetchHistory={fetchHistory} />
+      <TokenAlerts token={token} />
     </div>
   );
 }

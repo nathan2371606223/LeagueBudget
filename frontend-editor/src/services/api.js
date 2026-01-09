@@ -83,3 +83,21 @@ export async function fetchHistory(page = 1, pageSize = 10) {
   return res.data;
 }
 
+// Token alerts (shared table)
+export async function fetchTokenAlerts(token, resolved = false) {
+  const res = await axios.get(`${API_BASE}/token-alerts`, {
+    params: { resolved },
+    headers: authHeaders(token)
+  });
+  return res.data;
+}
+
+export async function resolveTokenAlert(token, id) {
+  const res = await axios.post(`${API_BASE}/token-alerts/${id}/resolve`, {}, { headers: authHeaders(token) });
+  return res.data;
+}
+
+export async function deleteTokenAlert(token, id) {
+  const res = await axios.delete(`${API_BASE}/token-alerts/${id}`, { headers: authHeaders(token) });
+  return res.data;
+}
