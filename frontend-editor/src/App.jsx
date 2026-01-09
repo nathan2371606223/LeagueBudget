@@ -43,7 +43,7 @@ export default function App() {
   };
 
   const loadTeams = async () => {
-    const data = await fetchTeams();
+    const data = await fetchTeams(token);
     setTeams(data);
     setStatus("数据已更新");
   };
@@ -124,7 +124,7 @@ export default function App() {
       />
       <TransferImport onSubmit={handleTransfers} />
       <ExportButtons token={token} />
-      <HistoryViewer fetchHistory={fetchHistory} />
+      <HistoryViewer fetchHistory={fetchHistory} token={token} />
       <TokenAlerts token={token} />
     </div>
   );

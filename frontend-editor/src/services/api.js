@@ -30,8 +30,8 @@ export async function initializeTeams() {
   return res.data;
 }
 
-export async function fetchTeams() {
-  const res = await axios.get(`${API_BASE}/teams`);
+export async function fetchTeams(token) {
+  const res = await axios.get(`${API_BASE}/teams`, { headers: authHeaders(token) });
   return res.data;
 }
 
@@ -78,8 +78,11 @@ export async function exportHistoryCsv() {
   return res.data;
 }
 
-export async function fetchHistory(page = 1, pageSize = 10) {
-  const res = await axios.get(`${API_BASE}/history`, { params: { page, pageSize } });
+export async function fetchHistory(token, page = 1, pageSize = 10) {
+  const res = await axios.get(`${API_BASE}/history`, { 
+    params: { page, pageSize },
+    headers: authHeaders(token)
+  });
   return res.data;
 }
 

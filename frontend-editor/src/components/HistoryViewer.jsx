@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function HistoryViewer({ fetchHistory }) {
+export default function HistoryViewer({ fetchHistory, token }) {
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -8,12 +8,14 @@ export default function HistoryViewer({ fetchHistory }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   useEffect(() => {
-    load(page);
+    if (token) {
+      load(page);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, token]);
 
   const load = async (p) => {
-    const res = await fetchHistory(p, pageSize);
+    const res = await fetchHistory(token, p, pageSize);
     setData(res.data || []);
     setTotal(res.total || 0);
   };
