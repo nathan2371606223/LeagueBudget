@@ -1,6 +1,7 @@
 const express = require("express");
 const { pool } = require("../db/connection");
 const { authMiddleware } = require("../middleware/auth");
+const { requireTeamToken } = require("../middleware/teamToken");
 const { logHistory } = require("./history");
 const { runMigrations } = require("../db/migrations");
 
@@ -20,7 +21,7 @@ async function getLevelNames() {
   };
 }
 
-router.get("/", async (req, res) => {
+router.get("/", requireTeamToken, async (req, res) => {
   const { rows } = await pool.query("SELECT * FROM lb_teams ORDER BY level ASC, position_order ASC");
   res.json(rows);
 });

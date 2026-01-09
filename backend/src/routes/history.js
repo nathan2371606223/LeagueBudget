@@ -2,6 +2,7 @@ const express = require("express");
 const { stringify } = require("csv-stringify/sync");
 const { pool } = require("../db/connection");
 const { authMiddleware } = require("../middleware/auth");
+const { requireTeamToken } = require("../middleware/teamToken");
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ function toText(val) {
   return String(val);
 }
 
-router.get("/", async (req, res) => {
+router.get("/", requireTeamToken, async (req, res) => {
   const { team_id, field_name, start, end, page = 1, pageSize = 10 } = req.query;
   const conditions = [];
   const values = [];

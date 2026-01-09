@@ -1,13 +1,25 @@
 import { useEffect, useState } from "react";
 import TeamTable from "./components/TeamTable";
 import HistoryViewer from "./components/HistoryViewer";
-import { fetchTeams, fetchLevels, fetchHistory } from "./services/api";
+import TokenGate from "./components/TokenGate";
+import { fetchTeams, fetchLevels, fetchHistory, getStoredToken, setStoredToken } from "./services/api";
 
 export default function App() {
   const [teams, setTeams] = useState([]);
   const [levels, setLevels] = useState({ 1: "Level 1", 2: "Level 2", 3: "Level 3" });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [status, setStatus] = useState("");
+  const [tokenReady, setTokenReady] = useState(!!getStoredToken());
+  const [prefillToken, setPrefillToken] = useState("");
+
+  // Support ?token=... URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+    if (urlToken) {
+      setPrefillToken(urlToken);
+    }
+  }, []);
 
   const refresh = async () => {
     try {
@@ -17,14 +29,31 @@ export default function App() {
       setStatus("数据已更新");
       setLastUpdated(new Date());
     } catch (err) {
-      setStatus(err?.response?.data?.message || "获取数据失败");
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setTokenReady(false);
+        setStatus("令牌无效，请重新输入");
+      } else {
+        setStatus(err?.response?.data?.message || "获取数据失败");
+      }
     }
   };
 
   useEffect(() => {
-    refresh();
+    if (tokenReady) {
+      refresh();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tokenReady]);
+
+  const handleTokenValidated = (token) => {
+    setStoredToken(token);
+    setTokenReady(true);
+  };
+
+
+  if (!tokenReady) {
+    return <TokenGate initialToken={prefillToken} onValidated={handleTokenValidated} />;
+  }
 
   return (
     <div style={{ padding: 20 }}>
