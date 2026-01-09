@@ -61,3 +61,7 @@ export async function fetchHistory(page = 1, pageSize = 10) {
   return res.data;
 }
 
+export async function fetchAnnouncement() {
+  const res = await client.get(`${API_BASE}/announcement`);
+  return res.data;
+}
