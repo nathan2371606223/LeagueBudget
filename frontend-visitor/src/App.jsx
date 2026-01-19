@@ -10,7 +10,10 @@ export default function App() {
   const [levels, setLevels] = useState({ 1: "Level 1", 2: "Level 2", 3: "Level 3" });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [status, setStatus] = useState("");
-  const [tokenReady, setTokenReady] = useState(!!getStoredToken());
+  // Check for admin token (JWT) first, then team token
+  const adminToken = localStorage.getItem("token"); // JWT token from editor login
+  const teamToken = getStoredToken(); // Team token
+  const [tokenReady, setTokenReady] = useState(!!(adminToken || teamToken));
   const [prefillToken, setPrefillToken] = useState("");
 
   // Support ?token=... URL parameter
@@ -21,6 +24,39 @@ export default function App() {
       setPrefillToken(urlToken);
     }
   }, []);
+
+  // Listen for admin token removal (when user logs out from editor site)
+  useEffect(() => {
+    const checkAdminToken = () => {
+      const currentAdminToken = localStorage.getItem("token");
+      const currentTeamToken = getStoredToken();
+      // If admin token was removed and no team token, require authentication
+      if (!currentAdminToken && !currentTeamToken && tokenReady) {
+        setTokenReady(false);
+        setStatus("管理员已登出，请重新输入团队令牌");
+      }
+    };
+
+    // Check on storage change (when token is removed in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === "token" && e.newValue === null) {
+        checkAdminToken();
+      }
+    };
+
+    // Check on window focus (catch cases where storage events don't fire)
+    const handleFocus = () => {
+      checkAdminToken();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [tokenReady]);
 
   const refresh = async () => {
     try {

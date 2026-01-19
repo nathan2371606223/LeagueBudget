@@ -20,10 +20,18 @@ export function setStoredToken(token) {
 // Axios instance with token header
 const client = axios.create({ baseURL: API_BASE });
 client.interceptors.request.use((config) => {
-  const token = getStoredToken();
-  if (token) {
+  // Check for admin token (JWT) first, then fall back to team token
+  const adminToken = localStorage.getItem("token"); // JWT token from editor login
+  const teamToken = getStoredToken(); // Team token
+  
+  if (adminToken) {
+    // Admin token takes precedence
     config.headers = config.headers || {};
-    config.headers["X-Team-Token"] = token;
+    config.headers["Authorization"] = `Bearer ${adminToken}`;
+  } else if (teamToken) {
+    // Fall back to team token
+    config.headers = config.headers || {};
+    config.headers["X-Team-Token"] = teamToken;
   }
   return config;
 });
