@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: gh-pages-editor
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -15,6 +19,8 @@ jobs:
         working-directory: frontend-editor
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -33,3 +39,5 @@ jobs:
           publish_branch: gh-pages
           destination_dir: editor
           keep_files: true
+          force_orphan: false
+          allow_empty_commit: true
