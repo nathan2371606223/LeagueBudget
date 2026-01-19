@@ -25,21 +25,25 @@ export default function App() {
     }
   }, []);
 
-  // Listen for admin token removal (when user logs out from editor site)
+  // Listen for admin token changes (when user logs in/out from editor site)
   useEffect(() => {
     const checkAdminToken = () => {
       const currentAdminToken = localStorage.getItem("token");
       const currentTeamToken = getStoredToken();
-      // If admin token was removed and no team token, require authentication
-      if (!currentAdminToken && !currentTeamToken && tokenReady) {
-        setTokenReady(false);
-        setStatus("管理员已登出，请重新输入团队令牌");
+      const shouldBeReady = !!(currentAdminToken || currentTeamToken);
+      
+      // Update tokenReady state if it changed
+      if (shouldBeReady !== tokenReady) {
+        setTokenReady(shouldBeReady);
+        if (!shouldBeReady) {
+          setStatus("管理员已登出，请重新输入团队令牌");
+        }
       }
     };
 
-    // Check on storage change (when token is removed in another tab)
+    // Check on storage change (when token is added/removed in another tab)
     const handleStorageChange = (e) => {
-      if (e.key === "token" && e.newValue === null) {
+      if (e.key === "token") {
         checkAdminToken();
       }
     };
