@@ -26,6 +26,7 @@ Two GitHub Pages frontends (editor + visitor) with a Railway-hosted Node/Express
   - View modification history
   - Clear history
   - Export history as CSV
+- **Announcement management**: Set and update announcement content, visible on visitor site
 - **Token alerts**: View and manage token mismatch alerts
 
 ### Visitor Site
@@ -33,6 +34,7 @@ Two GitHub Pages frontends (editor + visitor) with a Railway-hosted Node/Express
 - Grouped by level (with customizable level names)
 - Manual refresh button (no auto-refresh)
 - Shows modification history
+- **Announcement display**: View announcements posted by administrators
 
 ## Quick Start (dev)
 
@@ -48,6 +50,7 @@ Tables with `lb_` prefix:
 - `lb_config`: Configuration table (for password)
 - `lb_teams`: Teams table
 - `lb_modification_history`: Modification history
+- `lb_announcement`: Announcement table
 
 Shared tables (used by other modules):
 - `lb_team_tokens`: Team tokens table (one token per team)
